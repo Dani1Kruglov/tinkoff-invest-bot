@@ -1,0 +1,7 @@
+AccountId:
+APIToken: t.fDKCEZhFQ7eDepmcuMrC5NyeQ_YW-tfB9UQgeVCbPn3pqGKbRBAnvcKzZNeuCXaOHv7W5qpvHJv457ihk1bikA
+EndPoint: invest-public-api.tinkoff.ru:443
+AppName: tinkoff-invest-bot
+DisableResourceExhaustedRetry: false
+DisableAllRetry: false
+MaxRetries: 3
