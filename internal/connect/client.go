@@ -11,11 +11,13 @@ import (
 	"time"
 )
 
-func ClientByConfig() (*investgo.Client, *zap.SugaredLogger, context.CancelFunc, investgo.Config) {
+func ClientByConfig(token string) (*investgo.Client, *zap.SugaredLogger, context.CancelFunc, investgo.Config) {
 	config, err := investgo.LoadConfig("config.yaml")
 	if err != nil {
 		log.Fatalf("config loading error %v", err.Error())
 	}
+
+	config.Token = token
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 

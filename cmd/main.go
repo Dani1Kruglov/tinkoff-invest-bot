@@ -2,43 +2,27 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"tinkoff-investment-bot/internal/connect"
-	i "tinkoff-investment-bot/internal/services/instruments"
-	o "tinkoff-investment-bot/internal/services/operations"
+	"tinkoff-investment-bot/internal/tracking"
 )
 
 func main() {
-	client, logger, cancel, _ := connect.ClientByConfig()
 
-	i.WorkWithInstruments(client, logger)
-	o.WorkWithOperations(client, logger)
-
-	defer func() {
-		fmt.Println("-------end-------")
-		err := logger.Sync()
-		if err != nil {
-			log.Printf(err.Error())
-		}
-
-		cancel()
-
-		logger.Infof("closing connect connection")
-		err = client.Stop()
-		if err != nil {
-			logger.Errorf("connect shutdown error %v", err.Error())
-		}
-
-	}()
+	fmt.Println("Хотите использовать бота для: ")
+	fmt.Println("1 - только для отслеживания информации по ценным бумагам ")
+	fmt.Println("2 - для выполнения операций ")
+	var command string
+	_, err := fmt.Scan(&command)
+	if err != nil {
+		_ = fmt.Errorf(err.Error())
+	}
+	switch command {
+	case "1":
+		tracking.TrackByTinkoffToken()
+		break
+	case "2":
+		break
+	default:
+		fmt.Println("Такой команды нет")
+		break
+	}
 }
-
-/* get account data
-usersService := client.NewUsersServiceClient()
-
-accsResp, err := usersService.GetAccounts()
-if err != nil {
-logger.Errorf(err.Error())
-} else {
-accs := accsResp.GetAccounts()
-fmt.Println(accs)
-}*/
