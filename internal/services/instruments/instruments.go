@@ -2,47 +2,103 @@ package instruments
 
 import (
 	"fmt"
+	investapi "github.com/russianinvestments/invest-api-go-sdk/proto"
 	"go.uber.org/zap"
-
+	"sync"
+	"time"
 	"tinkoff-investment-bot/internal/model"
+	printbot "tinkoff-investment-bot/internal/print-bot"
 	m "tinkoff-investment-bot/internal/services/marketdata"
+	o "tinkoff-investment-bot/internal/services/operations"
 )
 
-func GetShareByTicker(logger *zap.SugaredLogger, tracker *model.Tracker) {
-	fmt.Println("Введите тикер акции (MOEX, SBER и так далее)")
-	var ticker string
-	_, err := fmt.Scan(&ticker)
+func GetShareByTicker(tracker *model.Tracker, logger *zap.SugaredLogger) {
+	ticker, err := printbot.GetTickerFromUser()
 	if err != nil {
 		logger.Errorf(err.Error())
 	}
 
-	instrResp, err := tracker.InstrumentsService.ShareByTicker(ticker, "TQBR")
+	instrResp, err := tracker.InstrumentsService.ShareByTicker(ticker, "TQBR") //tqbr только для российских компаний
 
 	if err != nil {
 		logger.Errorf(err.Error())
 	} else {
 		instrument := instrResp.GetInstrument()
-		fmt.Println(instrument)
+		printbot.InfoAboutShareByItsTicker(instrument)
 
-		marketDataResp, err := m.GetLastPriceByFigi(instrument, tracker)
-		if err != nil {
-			logger.Errorf(err.Error())
-		}
-		fmt.Printf("Нынешняя цена: %v.%v ₽\n", marketDataResp.GetLastPrices()[0].GetPrice().GetUnits(), marketDataResp.GetLastPrices()[0].GetPrice().GetNano()/10000000)
+		m.GetLastPriceByFigi(tracker, instrument, logger)
 
-		fmt.Println("Прогнозы от инвест домов:")
+		printbot.HeadlineForecastsOfInvestmentHouses()
+
 		forecast, _ := tracker.InstrumentsService.GetForecastBy(instrument.GetUid())
 		for i, target := range forecast.GetTargets() {
-			fmt.Println("-  -  -  -  -  -  -  -  -  -  -")
-			fmt.Printf("Номер компании: %d\n", i+1)
-			fmt.Printf("Название компании, давшей прогноз: %v\n", target.GetCompany())
-			fmt.Printf("Прогноз: %v\n", target.GetRecommendation())
-			fmt.Printf("Прогнозируемая цена: %v.%v ₽\n", target.GetTargetPrice().GetUnits(), target.GetTargetPrice().GetNano()/10000000)
-			fmt.Printf("Изменение цены: %v.%v ₽\n", target.GetPriceChange().GetUnits(), target.GetPriceChange().GetNano()/10000000)
+			printbot.InvestHouseForecast(i, target)
 		}
 		fmt.Println("======================================")
-		fmt.Printf("Согласованный прогноз: %v.%v ₽\n", forecast.GetConsensus().GetConsensus().GetUnits(), forecast.GetConsensus().GetConsensus().GetNano()/10000000)
+
+		printbot.ConsensusForecast(forecast.GetConsensus().GetConsensus().GetUnits(), forecast.GetConsensus().GetConsensus().GetNano()/10000000)
 	}
 	fmt.Println("[][][][[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]")
 
+}
+
+func GetScheduleOnClientSecurities(tracker *model.Tracker, logger *zap.SugaredLogger, isReports bool) {
+	portfolioResp, err := o.GetPortfolioByAccountID(tracker)
+
+	if err != nil {
+		logger.Errorf(err.Error())
+	} else {
+		var wg sync.WaitGroup
+		for _, position := range portfolioResp.GetPositions() {
+			fmt.Println("-  -  -  -  -  -  -  -  -  -  -")
+			instrument, err := tracker.InstrumentsService.InstrumentByUid(position.GetInstrumentUid())
+			if err != nil {
+				logger.Errorf(err.Error())
+			}
+			wg.Add(1)
+			position := position
+			go func() {
+				defer wg.Done()
+				err := getPaperWithShareTypeFromInstruments(instrument.GetInstrument(), tracker, position, isReports)
+				if err != nil {
+					logger.Errorf(err.Error())
+				}
+			}()
+
+		}
+		wg.Wait()
+	}
+}
+
+func getPaperWithShareTypeFromInstruments(instrument *investapi.Instrument, tracker *model.Tracker, position *investapi.PortfolioPosition, isReports bool) error {
+	if instrument.GetInstrumentType() != "share" { //==
+		err := getSchedule(tracker, instrument, position, isReports)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getSchedule(tracker *model.Tracker, instrument *investapi.Instrument, position *investapi.PortfolioPosition, isReports bool) error {
+	startDate := time.Now()
+	endDate := startDate.AddDate(0, 6, 0)
+
+	//ticker, _ := tracker.InstrumentsService.ShareByTicker("TATNP", "TQBR")
+
+	if isReports {
+		reports, err := tracker.InstrumentsService.GetAssetReports(position.GetInstrumentUid(), startDate, endDate)
+		if err != nil {
+			return err
+		}
+
+		printbot.PrintScheduleOfReports(instrument.GetName(), reports)
+	} else {
+		reports, err := tracker.InstrumentsService.GetDividents(position.GetInstrumentUid(), startDate, endDate)
+		if err != nil {
+			return err
+		}
+		printbot.PrintScheduleOfDividend(instrument.GetName(), reports.GetDividends()[0].GetPaymentDate().AsTime().Local(), reports.GetDividends()[0].GetDividendNet())
+	}
+	return nil
 }

@@ -5,34 +5,27 @@ import (
 	"github.com/russianinvestments/invest-api-go-sdk/investgo"
 	pb "github.com/russianinvestments/invest-api-go-sdk/proto"
 	"go.uber.org/zap"
+	printbot "tinkoff-investment-bot/internal/print-bot"
 
 	"tinkoff-investment-bot/internal/model"
 	u "tinkoff-investment-bot/internal/services/users"
 )
 
-func GetUserSharesOnAccount(logger *zap.SugaredLogger, tracker *model.Tracker) {
+func GetUserSecuritiesOnAccount(tracker *model.Tracker, logger *zap.SugaredLogger) {
 	portfolioResp, err := GetPortfolioByAccountID(tracker)
-
 	if err != nil {
 		logger.Errorf(err.Error())
 	} else {
 		for _, position := range portfolioResp.GetPositions() {
-			fmt.Println("-  -  -  -  -  -  -  -  -  -  -")
-			instrument, err := tracker.InstrumentsService.FindInstrument(position.GetInstrumentUid())
+			instrument, err := tracker.InstrumentsService.InstrumentByUid(position.GetInstrumentUid())
 			if err != nil {
 				logger.Errorf(err.Error())
 			}
-			fmt.Printf("Название ценной бумаги: %v\n", instrument.GetInstruments()[0].GetName())
-			fmt.Printf("Тикер ценной бумаги: %v\n", instrument.GetInstruments()[0].GetTicker())
-			fmt.Printf("Тип инструмента: %v\n", position.GetInstrumentType())
-			fmt.Printf("Количество в портфеле в штуках: %d.%d\n", position.GetQuantity().GetUnits(), position.GetQuantity().GetNano()/10000000)
-			fmt.Printf("Цена за шт в портфеле: %d.%d ₽\n", position.GetAveragePositionPrice().GetUnits(), position.GetAveragePositionPriceFifo().GetNano()/10000000)
-			fmt.Println("...........Новое сообщение.........")
-			fmt.Printf("Цена ценной бумаги сейчас: %d.%d ₽\n", position.GetCurrentPrice().GetUnits(), position.GetCurrentPrice().GetNano()/10000000)
+			printbot.InfoAboutUserSecurities(instrument.GetInstrument(), position)
 		}
 		fmt.Println("////////////////////////////////////")
-		fmt.Printf("Общая стоимость портфеля: %v ₽\n", portfolioResp.TotalAmountPortfolio.GetUnits())
 	}
+	printbot.TotalAmountPortfolioUser(portfolioResp)
 	fmt.Println("[][][][[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]")
 }
 

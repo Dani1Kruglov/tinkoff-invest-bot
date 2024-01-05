@@ -3,6 +3,7 @@ package tracking
 import (
 	"fmt"
 	"log"
+	printbot "tinkoff-investment-bot/internal/print-bot"
 	i "tinkoff-investment-bot/internal/services/instruments"
 
 	"tinkoff-investment-bot/internal/connect"
@@ -13,12 +14,10 @@ import (
 )
 
 func TrackByTinkoffToken() {
-	fmt.Println("Введите 'токен для чтения' своего брокерского счета:")
-	var token, command string
-	_, err := fmt.Scan(&token)
-	if err != nil {
-		_ = fmt.Errorf(err.Error())
-	}
+	token, _ := printbot.GetTokenFromUser()
+
+	command := printbot.MainMenu()
+
 	client, logger, cancel, _ := connect.ClientByConfig(token)
 
 	var tracker model.Tracker
@@ -26,26 +25,15 @@ func TrackByTinkoffToken() {
 
 	end := false
 	for !end {
-		fmt.Println("Введите что хотите сделать: ")
-		fmt.Println("0 - Закончить")
-		fmt.Println("1 - Посмотреть свои ценные бумаги")
-		fmt.Println("2 - Посмотреть данные по акции по ее названию")
-		fmt.Println("3 - Добавить акцию не из вашего портфеля в список отслеживаемых ")
-		fmt.Println("4 - Посмотреть расписание дивидендов по вашим ценным бумагам")
-		fmt.Println("5 - Посмотреть расписание отчётов по вашим ценным бумагам")
-		_, err := fmt.Scan(&command)
-		if err != nil {
-			_ = fmt.Errorf(err.Error())
-		}
 		switch command {
 		case "0":
 			end = true
 			break
 		case "1":
-			o.GetUserSharesOnAccount(logger, &tracker)
+			o.GetUserSecuritiesOnAccount(&tracker, logger)
 			break
 		case "2":
-			i.GetShareByTicker(logger, &tracker)
+			i.GetShareByTicker(&tracker, logger)
 			break
 		case "3":
 			accountID, err := u.GetAccountID(&tracker)
@@ -55,10 +43,17 @@ func TrackByTinkoffToken() {
 			fmt.Println(accountID)
 			fmt.Println("[][][][[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]")
 			break
+		case "4":
+			i.GetScheduleOnClientSecurities(&tracker, logger, false)
+			break
+		case "5":
+			i.GetScheduleOnClientSecurities(&tracker, logger, true)
+			break
 		default:
 			break
 
 		}
+		command = printbot.MainMenu()
 	}
 
 	defer func() {

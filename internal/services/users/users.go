@@ -1,8 +1,8 @@
 package users
 
 import (
-	"fmt"
 	"tinkoff-investment-bot/internal/model"
+	printbot "tinkoff-investment-bot/internal/print-bot"
 )
 
 func GetAccountID(tracker *model.Tracker) (string, error) {
@@ -12,19 +12,13 @@ func GetAccountID(tracker *model.Tracker) (string, error) {
 	}
 
 	accounts := userInfo.GetAccounts()
+
 	if len(userInfo.GetAccounts()) > 1 {
-		var num int
-		fmt.Println("Выберите счёт, который хотите просмотреть: ")
-		for i, account := range accounts {
-			fmt.Println("-  -  -  -  -  -  -  -  -  -  -")
-			fmt.Printf("%d: \n id счёта: %v\n", i+1, account.GetId())
-			fmt.Printf("id счёта: %v\n", account.GetName())
-		}
-		_, err = fmt.Scan(&num)
+		accountSelect, err := printbot.UserAccountSelect(accounts)
 		if err != nil {
 			return "", err
 		}
-		return accounts[num].GetId(), nil
+		return accounts[accountSelect].GetId(), nil
 
 	}
 	return accounts[0].GetId(), nil
