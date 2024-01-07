@@ -5,14 +5,16 @@ import (
 	"github.com/russianinvestments/invest-api-go-sdk/investgo"
 	pb "github.com/russianinvestments/invest-api-go-sdk/proto"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
+	"tinkoff-investment-bot/internal/database"
 	printbot "tinkoff-investment-bot/internal/print-bot"
 
 	"tinkoff-investment-bot/internal/model"
 	u "tinkoff-investment-bot/internal/services/users"
 )
 
-func GetUserSecuritiesOnAccount(tracker *model.Tracker, logger *zap.SugaredLogger) {
-	portfolioResp, err := GetPortfolioByAccountID(tracker)
+func GetUserSecuritiesOnAccount(tracker *model.Tracker, logger *zap.SugaredLogger, db *gorm.DB, telegramID string) {
+	portfolioResp, err := GetPortfolioByAccountID(tracker, db, telegramID)
 	if err != nil {
 		logger.Errorf(err.Error())
 	} else {
@@ -29,10 +31,18 @@ func GetUserSecuritiesOnAccount(tracker *model.Tracker, logger *zap.SugaredLogge
 	fmt.Println("[][][][[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]")
 }
 
-func GetPortfolioByAccountID(tracker *model.Tracker) (*investgo.PortfolioResponse, error) {
-	accountID, err := u.GetAccountID(tracker)
-	if err != nil {
-		return nil, err
+func GetPortfolioByAccountID(tracker *model.Tracker, db *gorm.DB, telegramID string) (*investgo.PortfolioResponse, error) {
+	account := database.GetAccountIDByTelegramID(db, telegramID)
+	if account.AccountID == "" {
+		var err error
+		account, err = u.GetAccount(tracker)
+		if err != nil {
+			return nil, err
+		}
+		err = database.AddAccount(db, &account, database.GetUserByTelegramID(db, telegramID).ID)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return tracker.OperationsService.GetPortfolio(accountID, pb.PortfolioRequest_RUB)
+	return tracker.OperationsService.GetPortfolio(account.AccountID, pb.PortfolioRequest_RUB)
 }

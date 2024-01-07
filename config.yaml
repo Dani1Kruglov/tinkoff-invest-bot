@@ -1,5 +1,4 @@
-AccountId:
-APIToken:
+DataBaseDSN: host=localhost port=5432 user=user password=pswrd dbname=db-name sslmode=disable
 EndPoint: invest-public-api.tinkoff.ru:443
 AppName: tinkoff-invest-bot
 DisableResourceExhaustedRetry: false
