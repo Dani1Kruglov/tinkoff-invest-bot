@@ -14,12 +14,6 @@ func AddUser(db *gorm.DB, user *model.User) error {
 	return nil
 }
 
-func GetUserByTelegramID(db *gorm.DB, telegramID string) model.User {
-	var user model.User
-	db.Table("users").Select("*").Where("telegram_id = ?", telegramID).Scan(&user)
-	return user
-}
-
 func AddAccount(db *gorm.DB, account *model.Account, userID uint) error {
 	if userID != 0 {
 		account.UserID = userID
@@ -31,12 +25,6 @@ func AddAccount(db *gorm.DB, account *model.Account, userID uint) error {
 	} else {
 		return errors.New("error select user by telegram id")
 	}
-}
-
-func GetAccountIDByTelegramID(db *gorm.DB, telegramID string) model.Account {
-	var account model.Account
-	db.Table("accounts").Select("*").Joins("left join users on accounts.user_id = users.id").Where("users.telegram_id = ?", telegramID).Scan(&account)
-	return account
 }
 
 func AddShare(db *gorm.DB, share *model.Share, userID uint, price float32) error {
@@ -57,4 +45,16 @@ func AddShare(db *gorm.DB, share *model.Share, userID uint, price float32) error
 		return result.Error
 	}
 	return nil
+}
+
+func GetUserByTelegramID(db *gorm.DB, telegramID string) model.User {
+	var user model.User
+	db.Table("users").Select("*").Where("telegram_id = ?", telegramID).Scan(&user)
+	return user
+}
+
+func GetAccountIDByTelegramID(db *gorm.DB, telegramID string) model.Account {
+	var account model.Account
+	db.Table("accounts").Select("*").Joins("left join users on accounts.user_id = users.id").Where("users.telegram_id = ?", telegramID).Scan(&account)
+	return account
 }

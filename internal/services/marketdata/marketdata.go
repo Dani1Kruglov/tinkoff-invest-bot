@@ -10,5 +10,5 @@ func GetLastPriceByFigi(tracker *model.Tracker, instrument *investapi.Share) (fl
 	if err != nil {
 		return 0, err
 	}
-	return float32(marketDataResp.GetLastPrices()[0].GetPrice().GetUnits()) + float32(marketDataResp.GetLastPrices()[0].GetPrice().GetNano()/10000000), nil
+	return float32(marketDataResp.GetLastPrices()[0].GetPrice().GetUnits()) + float32(marketDataResp.GetLastPrices()[0].GetPrice().GetNano())/float32(1000000000), nil
 }

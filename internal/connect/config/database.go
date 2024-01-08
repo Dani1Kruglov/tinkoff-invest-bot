@@ -10,7 +10,7 @@ type databaseConfig struct {
 	DSN string `yaml:"DataBaseDSN"`
 }
 
-func LoadConfigDBFile(filename string) (string, error) {
+func LoadConfigDBFileByConfigYaml(filename string) (string, error) {
 	var dbConfig databaseConfig
 	input, err := os.ReadFile(filename)
 	if err != nil {

@@ -82,8 +82,8 @@ func InvestHouseForecast(i int, target *investapi.GetForecastResponse_TargetItem
 	fmt.Printf("Изменение цены: %v.%v ₽\n", target.GetPriceChange().GetUnits(), target.GetPriceChange().GetNano()/10000000)
 }
 
-func ConsensusForecast(units int64, nano int32) {
-	fmt.Printf("Согласованный прогноз: %v.%v ₽\n", units, nano)
+func ConsensusForecast(price float32) {
+	fmt.Printf("Согласованный прогноз:%.2f ₽\n", price)
 }
 
 func PrintScheduleOfReports(name string, reports *investgo.GetAssetReportsResponse) {

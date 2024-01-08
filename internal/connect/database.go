@@ -3,12 +3,12 @@ package connect
 import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"tinkoff-investment-bot/internal/config"
+	"tinkoff-investment-bot/internal/connect/config"
 	"tinkoff-investment-bot/internal/model"
 )
 
 func connectDB() (*gorm.DB, error) {
-	databaseDSN, err := config.LoadConfigDBFile("config.yaml")
+	databaseDSN, err := config.LoadConfigDBFileByConfigYaml("config.yaml")
 	if err != nil {
 		return nil, err
 	}

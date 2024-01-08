@@ -2,7 +2,8 @@ package tracking
 
 import (
 	printbot "tinkoff-investment-bot/internal/print-bot"
-	i "tinkoff-investment-bot/internal/services/instruments"
+	"tinkoff-investment-bot/internal/services/instruments/schedules"
+	"tinkoff-investment-bot/internal/services/instruments/shares"
 
 	"tinkoff-investment-bot/internal/connect"
 
@@ -28,16 +29,16 @@ func TrackByTinkoffToken() {
 			o.GetUserSecuritiesOnAccount(tracker, logger, db, telegramID)
 			break
 		case "2":
-			i.ViewInfoOnShareByItsTicker(tracker, logger)
+			shares.ViewInfoOnShareByItsTicker(tracker, logger)
 			break
 		case "3":
-			i.AddShareToListOfTracked(tracker, logger, db, telegramID)
+			shares.AddShareToListOfTracked(tracker, logger, db, telegramID)
 			break
 		case "4":
-			i.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, false)
+			schedules.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, false)
 			break
 		case "5":
-			i.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, true)
+			schedules.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, true)
 			break
 		default:
 			break
