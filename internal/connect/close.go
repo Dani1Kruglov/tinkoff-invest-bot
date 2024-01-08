@@ -2,7 +2,6 @@ package connect
 
 import (
 	"context"
-	"fmt"
 	"github.com/russianinvestments/invest-api-go-sdk/investgo"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -10,7 +9,7 @@ import (
 )
 
 func Close(client *investgo.Client, db *gorm.DB, cancel context.CancelFunc, logger *zap.SugaredLogger) {
-	fmt.Println("-------end-------")
+	logger.Infoln("-------end-------")
 	err := logger.Sync()
 	if err != nil {
 		log.Printf(err.Error())

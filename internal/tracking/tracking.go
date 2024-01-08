@@ -1,14 +1,12 @@
 package tracking
 
 import (
-	"fmt"
 	printbot "tinkoff-investment-bot/internal/print-bot"
 	i "tinkoff-investment-bot/internal/services/instruments"
 
 	"tinkoff-investment-bot/internal/connect"
 
 	o "tinkoff-investment-bot/internal/services/operations"
-	u "tinkoff-investment-bot/internal/services/users"
 )
 
 func TrackByTinkoffToken() {
@@ -30,15 +28,10 @@ func TrackByTinkoffToken() {
 			o.GetUserSecuritiesOnAccount(tracker, logger, db, telegramID)
 			break
 		case "2":
-			i.GetShareByTicker(tracker, logger)
+			i.ViewInfoOnShareByItsTicker(tracker, logger)
 			break
 		case "3":
-			account, err := u.GetAccount(tracker)
-			if err != nil {
-				logger.Errorf(err.Error())
-			}
-			fmt.Println(account.UserID)
-			fmt.Println("[][][][[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]")
+			i.AddShareToListOfTracked(tracker, logger, db, telegramID)
 			break
 		case "4":
 			i.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, false)

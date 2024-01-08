@@ -65,8 +65,8 @@ func InfoAboutShareByItsTicker(instrument *investapi.Share) {
 	fmt.Printf("Класс код акции: %v\n", instrument.GetClassCode())
 }
 
-func LastPrice(units int64, nano int32) {
-	fmt.Printf("Нынешняя цена: %d.%d ₽\n", units, nano)
+func LastPrice(price float32) {
+	fmt.Printf("Нынешняя цена: %.2f ₽\n", price)
 }
 
 func HeadlineForecastsOfInvestmentHouses() {
@@ -107,4 +107,24 @@ func UserAccountSelect(accounts []*investapi.Account) (int, error) {
 		return 0, err
 	}
 	return num, nil
+}
+
+func AddToListOfTracked() (string, error) {
+	var command string
+	fmt.Println("Добавить акцию в список отслеживаемых? \n1 - да\n2 - нет")
+	_, err := fmt.Scan(&command)
+	if err != nil {
+		return "", err
+	}
+	return command, nil
+}
+
+func SpecifyPrice() (string, error) {
+	var command string
+	fmt.Println("Отслеживать изменение цены на 10% от текущей (если нет, укажите свою цену)? \n1 - да (button)\nУказать свою цену")
+	_, err := fmt.Scan(&command)
+	if err != nil {
+		return "", err
+	}
+	return command, nil
 }

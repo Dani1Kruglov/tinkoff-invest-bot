@@ -14,7 +14,8 @@ type Account struct {
 }
 
 type Share struct {
-	UID       string `gorm:"primaryKey;type:varchar(200)"`
+	ID        uint   `gorm:"primaryKey"`
+	UID       string `gorm:"type:varchar(200)"`
 	Ticker    string `gorm:"column:ticker;type:varchar(10)"`
 	Name      string `gorm:"column:name;type:varchar(100)"`
 	FIGI      string `gorm:"column:figi;type:varchar(200)"`
@@ -23,7 +24,7 @@ type Share struct {
 
 type UserFavoriteShare struct {
 	UserID    uint    `gorm:"column:user_id;index;type:int"`
-	ShareID   string  `gorm:"column:share_id;index;type:varchar(200)"`
+	ShareID   uint    `gorm:"column:share_id;index;type:varchar(200)"`
 	LastPrice float32 `gorm:"column:last_price;type:float"`
 	Share     Share   `gorm:"foreignKey:ShareID"`
 	User      User    `gorm:"foreignKey:UserID"`

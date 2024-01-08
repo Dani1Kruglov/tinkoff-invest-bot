@@ -9,7 +9,7 @@ type Tracker struct {
 	UsersService       *investgo.UsersServiceClient
 }
 
-func (t *Tracker) AddServices(client *investgo.Client) {
+func (t *Tracker) NewTracker(client *investgo.Client) {
 	t.InstrumentsService = client.NewInstrumentsServiceClient()
 	t.MarketDataService = client.NewMarketDataServiceClient()
 	t.OperationsService = client.NewOperationsServiceClient()

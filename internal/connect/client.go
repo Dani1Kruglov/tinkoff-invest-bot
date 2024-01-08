@@ -2,6 +2,7 @@ package connect
 
 import (
 	"context"
+	"fmt"
 	"github.com/russianinvestments/invest-api-go-sdk/investgo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -34,16 +35,20 @@ func Config(telegramID string) (*investgo.Client, *gorm.DB, context.CancelFunc, 
 		if err != nil {
 			logger.Errorf(err.Error())
 		}
-		err := database.AddUser(db, &model.User{TelegramID: telegramID, Token: token})
-		if err != nil {
-			logger.Errorf(err.Error())
-		}
 	}
 
-	client, cancel := clientByConfig(logger, token)
+	client, cancel, err := clientByConfig(logger, &token)
+	if err != nil {
+		logger.Errorf(err.Error())
+	}
+
+	err = database.AddUser(db, &model.User{TelegramID: telegramID, Token: token})
+	if err != nil {
+		logger.Errorf(err.Error())
+	}
 
 	var tracker model.Tracker
-	tracker.AddServices(client)
+	tracker.NewTracker(client)
 
 	return client, db, cancel, logger, &tracker
 }
@@ -59,20 +64,27 @@ func getLogger() *zap.SugaredLogger {
 	return l.Sugar()
 }
 
-func clientByConfig(logger *zap.SugaredLogger, token string) (*investgo.Client, context.CancelFunc) {
+func clientByConfig(logger *zap.SugaredLogger, token *string) (*investgo.Client, context.CancelFunc, error) {
 	config, err := investgo.LoadConfig("config.yaml")
 	if err != nil {
 		log.Fatalf("config loading error %v", err.Error())
 	}
 
-	config.Token = token
+	config.Token = *token
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
 
 	client, err := investgo.NewClient(ctx, config, logger)
-	if err != nil {
-		logger.Fatalf("connect creating error %v", err.Error())
+	for err != nil {
+		if err.Error() == "rpc error: code = Unauthenticated desc = 40003" {
+			fmt.Println("Неверный токен, попробуйте еще раз: ")
+			*token, err = printbot.GetTokenFromUser()
+			config.Token = *token
+			client, err = investgo.NewClient(ctx, config, logger)
+		} else {
+			logger.Fatalf("connect creating error %v", err.Error())
+		}
 	}
 
-	return client, cancel
+	return client, cancel, nil
 }

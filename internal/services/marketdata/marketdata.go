@@ -2,15 +2,13 @@ package marketdata
 
 import (
 	investapi "github.com/russianinvestments/invest-api-go-sdk/proto"
-	"go.uber.org/zap"
 	"tinkoff-investment-bot/internal/model"
-	printbot "tinkoff-investment-bot/internal/print-bot"
 )
 
-func GetLastPriceByFigi(tracker *model.Tracker, instrument *investapi.Share, logger *zap.SugaredLogger) {
+func GetLastPriceByFigi(tracker *model.Tracker, instrument *investapi.Share) (float32, error) {
 	marketDataResp, err := tracker.MarketDataService.GetLastPrices([]string{instrument.GetFigi()})
 	if err != nil {
-		logger.Errorf(err.Error())
+		return 0, err
 	}
-	printbot.LastPrice(marketDataResp.GetLastPrices()[0].GetPrice().GetUnits(), marketDataResp.GetLastPrices()[0].GetPrice().GetNano()/10000000)
+	return float32(marketDataResp.GetLastPrices()[0].GetPrice().GetUnits()) + float32(marketDataResp.GetLastPrices()[0].GetPrice().GetNano()/10000000), nil
 }
