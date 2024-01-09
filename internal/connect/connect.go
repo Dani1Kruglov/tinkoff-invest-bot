@@ -6,9 +6,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"tinkoff-investment-bot/internal/connect/config"
-	"tinkoff-investment-bot/internal/database"
 	"tinkoff-investment-bot/internal/model"
 	printbot "tinkoff-investment-bot/internal/print-bot"
+	"tinkoff-investment-bot/internal/storage"
 )
 
 func Config(telegramID string) (*investgo.Client, *gorm.DB, context.CancelFunc, *zap.SugaredLogger, *model.Tracker) {
@@ -19,7 +19,9 @@ func Config(telegramID string) (*investgo.Client, *gorm.DB, context.CancelFunc, 
 		logger.Errorf(err.Error())
 	}
 
-	user := database.GetUserByTelegramID(db, telegramID)
+	userStorage := storage.NewUserStorage(db)
+
+	user := userStorage.GetUserByTelegramID(telegramID)
 
 	var token string
 
@@ -37,7 +39,7 @@ func Config(telegramID string) (*investgo.Client, *gorm.DB, context.CancelFunc, 
 		logger.Errorf(err.Error())
 	}
 
-	err = database.AddUser(db, &model.User{TelegramID: telegramID, Token: token})
+	err = userStorage.AddUser(&model.User{TelegramID: telegramID, Token: token})
 	if err != nil {
 		logger.Errorf(err.Error())
 	}

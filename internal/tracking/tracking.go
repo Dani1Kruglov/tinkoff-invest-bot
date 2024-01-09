@@ -1,11 +1,11 @@
 package tracking
 
 import (
-	printbot "tinkoff-investment-bot/internal/print-bot"
-	"tinkoff-investment-bot/internal/services/instruments/schedules"
-	"tinkoff-investment-bot/internal/services/instruments/shares"
-
 	"tinkoff-investment-bot/internal/connect"
+	"tinkoff-investment-bot/internal/cron"
+	printbot "tinkoff-investment-bot/internal/print-bot"
+	is "tinkoff-investment-bot/internal/services/instruments/invest-schedules"
+	"tinkoff-investment-bot/internal/services/instruments/shares"
 
 	o "tinkoff-investment-bot/internal/services/operations"
 )
@@ -17,6 +17,9 @@ func TrackByTinkoffToken() {
 	defer func() {
 		connect.Close(client, db, cancel, logger)
 	}()
+
+	logger.Infoln("start cron schedule")
+	go cron.NewCron(db, tracker)
 
 	end := false
 	for !end {
@@ -35,10 +38,10 @@ func TrackByTinkoffToken() {
 			shares.AddShareToListOfTracked(tracker, logger, db, telegramID)
 			break
 		case "4":
-			schedules.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, false)
+			is.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, false)
 			break
 		case "5":
-			schedules.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, true)
+			is.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, true)
 			break
 		default:
 			break

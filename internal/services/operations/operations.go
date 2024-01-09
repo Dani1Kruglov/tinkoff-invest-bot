@@ -6,8 +6,8 @@ import (
 	pb "github.com/russianinvestments/invest-api-go-sdk/proto"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"tinkoff-investment-bot/internal/database"
 	printbot "tinkoff-investment-bot/internal/print-bot"
+	"tinkoff-investment-bot/internal/storage"
 
 	"tinkoff-investment-bot/internal/model"
 	u "tinkoff-investment-bot/internal/services/users"
@@ -32,14 +32,16 @@ func GetUserSecuritiesOnAccount(tracker *model.Tracker, logger *zap.SugaredLogge
 }
 
 func GetPortfolioByAccountID(tracker *model.Tracker, db *gorm.DB, telegramID string) (*investgo.PortfolioResponse, error) {
-	account := database.GetAccountIDByTelegramID(db, telegramID)
+	accountStorage := storage.NewAccountStorage(db)
+	userStorage := storage.NewUserStorage(db)
+	account := accountStorage.GetAccountIDByTelegramID(telegramID)
 	if account.AccountID == "" {
 		var err error
 		account, err = u.GetAccount(tracker)
 		if err != nil {
 			return nil, err
 		}
-		err = database.AddAccount(db, &account, database.GetUserByTelegramID(db, telegramID).ID)
+		err = accountStorage.AddAccount(&account, userStorage.GetUserByTelegramID(telegramID).ID)
 		if err != nil {
 			return nil, err
 		}

@@ -1,4 +1,4 @@
-package schedules
+package invest_schedules
 
 import (
 	"fmt"

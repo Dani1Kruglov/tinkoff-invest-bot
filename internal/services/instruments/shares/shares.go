@@ -7,10 +7,10 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"strconv"
-	"tinkoff-investment-bot/internal/database"
 	"tinkoff-investment-bot/internal/model"
 	printbot "tinkoff-investment-bot/internal/print-bot"
 	m "tinkoff-investment-bot/internal/services/marketdata"
+	"tinkoff-investment-bot/internal/storage"
 )
 
 func ViewInfoOnShareByItsTicker(tracker *model.Tracker, logger *zap.SugaredLogger) {
@@ -47,13 +47,16 @@ func AddShareToListOfTracked(tracker *model.Tracker, logger *zap.SugaredLogger, 
 			price32 = float32(price)
 		}
 
-		err = database.AddShare(db, &model.Share{
+		userStorage := storage.NewUserStorage(db)
+		shareStorage := storage.NewShareStorage(db)
+
+		err = shareStorage.AddShare(&model.Share{
 			UID:       instrument.GetUid(),
 			Ticker:    instrument.GetTicker(),
 			Name:      instrument.GetName(),
 			FIGI:      instrument.GetFigi(),
 			ClassCode: instrument.GetClassCode(),
-		}, database.GetUserByTelegramID(db, telegramID).ID, price32)
+		}, userStorage.GetUserByTelegramID(telegramID).ID, price32)
 		if err != nil {
 			logger.Errorf(err.Error())
 		}

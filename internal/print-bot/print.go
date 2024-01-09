@@ -128,3 +128,11 @@ func SpecifyPrice() (string, error) {
 	}
 	return command, nil
 }
+
+func PriceChange(currentPrice float32, pastPrice float32, message string) {
+	fmt.Println("-  -  -  -  -  -  -  -  -  -  -")
+	fmt.Println(time.Now())
+	fmt.Println(message)
+	fmt.Printf("Прошлая цена: %.2f\n", pastPrice)
+	fmt.Printf("Нынешняя цена: %.2f\n", currentPrice)
+}
