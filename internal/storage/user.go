@@ -2,7 +2,7 @@ package storage
 
 import (
 	"gorm.io/gorm"
-	"tinkoff-investment-bot/internal/model"
+	"tinkoff-investment-bot/internal/model/database"
 )
 
 type UserPostgresStorage struct {
@@ -13,16 +13,16 @@ func NewUserStorage(db *gorm.DB) *UserPostgresStorage {
 	return &UserPostgresStorage{db: db}
 }
 
-func (u *UserPostgresStorage) AddUser(user *model.User) error {
-	result := u.db.FirstOrCreate(user, model.User{TelegramID: user.TelegramID, Token: user.Token})
+func (u *UserPostgresStorage) AddUser(user *database.User) error {
+	result := u.db.FirstOrCreate(user, database.User{TelegramID: user.TelegramID})
 	if result.Error != nil {
 		return result.Error
 	}
 	return nil
 }
 
-func (u *UserPostgresStorage) GetUserByTelegramID(telegramID string) model.User {
-	var user model.User
-	u.db.Table("users").Select("*").Where("telegram_id = ?", telegramID).Scan(&user)
+func (u *UserPostgresStorage) GetUserByTelegramChatID(telegramChatID int64) database.User {
+	var user database.User
+	u.db.Table("users").Select("*").Where("telegram_id = ?", telegramChatID).Scan(&user)
 	return user
 }

@@ -2,10 +2,10 @@ package marketdata
 
 import (
 	investapi "github.com/russianinvestments/invest-api-go-sdk/proto"
-	"tinkoff-investment-bot/internal/model"
+	"tinkoff-investment-bot/internal/model/tracker"
 )
 
-func GetLastPriceByFigi(tracker *model.Tracker, instrument *investapi.Share) (float32, error) {
+func GetLastPriceByFigi(tracker *tracker.Tracker, instrument *investapi.Share) (float32, error) {
 	marketDataResp, err := tracker.MarketDataService.GetLastPrices([]string{instrument.GetFigi()})
 	if err != nil {
 		return 0, err

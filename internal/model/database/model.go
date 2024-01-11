@@ -1,8 +1,8 @@
-package model
+package database
 
 type User struct {
 	ID         uint   `gorm:"primaryKey"`
-	TelegramID string `gorm:"column:telegram_id;type:varchar(100)"`
+	TelegramID int64  `gorm:"column:telegram_id;type:int"`
 	Token      string `gorm:"column:token;type:varchar(100)"`
 }
 

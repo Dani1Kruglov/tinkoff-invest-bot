@@ -7,22 +7,24 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"strconv"
-	"tinkoff-investment-bot/internal/model"
-	printbot "tinkoff-investment-bot/internal/print-bot"
+	printbot "tinkoff-investment-bot/internal/bot/print"
+	"tinkoff-investment-bot/internal/model/database"
+	"tinkoff-investment-bot/internal/model/tracker"
 	m "tinkoff-investment-bot/internal/services/marketdata"
 	"tinkoff-investment-bot/internal/storage"
 )
 
-func ViewInfoOnShareByItsTicker(tracker *model.Tracker, logger *zap.SugaredLogger) {
-	instrument, _, err := getInfoAboutShareByTicker(tracker)
+func ViewInfoOnShareByItsTicker(tracker *tracker.Tracker, logger *zap.SugaredLogger, ticker string) []string {
+	instrument, shareResp, _, err := getInfoAboutShareByTicker(tracker, ticker)
 	if err != nil {
 		logger.Errorf(err.Error())
 	}
-	getForecastsAboutShare(tracker, instrument)
+	shareResp = append(shareResp, getForecastsAboutShare(tracker, instrument)...)
+	return shareResp
 }
 
-func AddShareToListOfTracked(tracker *model.Tracker, logger *zap.SugaredLogger, db *gorm.DB, telegramID string) {
-	instrument, price32, err := getInfoAboutShareByTicker(tracker)
+func AddShareToListOfTracked(tracker *tracker.Tracker, logger *zap.SugaredLogger, db *gorm.DB, telegramChatID int64) {
+	instrument, _, price32, err := getInfoAboutShareByTicker(tracker, "")
 	if err != nil {
 		logger.Errorf(err.Error())
 	}
@@ -50,61 +52,48 @@ func AddShareToListOfTracked(tracker *model.Tracker, logger *zap.SugaredLogger, 
 		userStorage := storage.NewUserStorage(db)
 		shareStorage := storage.NewShareStorage(db)
 
-		err = shareStorage.AddShare(&model.Share{
+		err = shareStorage.AddShare(&database.Share{
 			UID:       instrument.GetUid(),
 			Ticker:    instrument.GetTicker(),
 			Name:      instrument.GetName(),
 			FIGI:      instrument.GetFigi(),
 			ClassCode: instrument.GetClassCode(),
-		}, userStorage.GetUserByTelegramID(telegramID).ID, price32)
+		}, userStorage.GetUserByTelegramChatID(telegramChatID).ID, price32)
 		if err != nil {
 			logger.Errorf(err.Error())
 		}
 	}
 }
 
-func getInfoAboutShareByTicker(tracker *model.Tracker) (*investapi.Share, float32, error) {
-	instrResp, err := findShareByTicker(tracker)
-	for err != nil && err.Error() == "rpc error: code = NotFound desc = 50002" {
-		fmt.Println("Акции с таким тикером нет, введите другой тикер или '0' чтобы выйти")
-		instrResp, err = findShareByTicker(tracker)
-	}
+func getInfoAboutShareByTicker(tracker *tracker.Tracker, ticker string) (*investapi.Share, []string, float32, error) {
+	instrResp, err := findShareByTicker(tracker, ticker)
 	if instrResp == nil {
-		return nil, 0, err
+		return nil, nil, 0, err
 	}
 
 	instrument := instrResp.GetInstrument()
-
-	printbot.InfoAboutShareByItsTicker(instrument)
-
-	price, _ := m.GetLastPriceByFigi(tracker, instrument)
+	price, err := m.GetLastPriceByFigi(tracker, instrument)
 	if err != nil {
-		return nil, 0, err
+		return nil, nil, 0, err
 	}
-	printbot.LastPrice(price)
 
-	fmt.Println("[][][][[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]")
-	return instrument, price, nil
+	shareInfo := printbot.InfoAboutShareByItsTicker(instrument)
+	shareInfo += fmt.Sprintf("Нынешняя цена: %.2f ₽\n", price)
+	return instrument, []string{shareInfo}, price, nil
 }
 
-func findShareByTicker(tracker *model.Tracker) (*investgo.ShareResponse, error) {
-	ticker, err := printbot.GetTickerFromUser()
-	if err != nil {
-		return nil, err
-	}
-	if ticker == "0" {
-		return nil, nil
-	}
+func findShareByTicker(tracker *tracker.Tracker, ticker string) (*investgo.ShareResponse, error) {
 	return tracker.InstrumentsService.ShareByTicker(ticker, "TQBR") //tqbr только для российских компаний
 }
 
-func getForecastsAboutShare(tracker *model.Tracker, instrument *investapi.Share) {
-	printbot.HeadlineForecastsOfInvestmentHouses()
+func getForecastsAboutShare(tracker *tracker.Tracker, instrument *investapi.Share) []string {
+	var forecastResp []string
+	forecastResp = append(forecastResp, "Прогнозы от инвест домов:")
 
 	forecast, _ := tracker.InstrumentsService.GetForecastBy(instrument.GetUid())
 	for i, target := range forecast.GetTargets() {
-		printbot.InvestHouseForecast(i, target)
+		forecastResp = append(forecastResp, printbot.InvestHouseForecast(i, target))
 	}
-	fmt.Println("======================================")
-	printbot.ConsensusForecast(float32(forecast.GetConsensus().GetConsensus().GetUnits()) + float32(forecast.GetConsensus().GetConsensus().GetNano())/float32(1000000000))
+	forecastResp = append(forecastResp, fmt.Sprintf("Согласованный прогноз:%.2f ₽\n", float32(forecast.GetConsensus().GetConsensus().GetUnits())+float32(forecast.GetConsensus().GetConsensus().GetNano())/float32(1000000000)))
+	return forecastResp
 }

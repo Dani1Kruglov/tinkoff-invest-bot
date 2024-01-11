@@ -5,8 +5,9 @@ import (
 	"gorm.io/gorm"
 	"strconv"
 	"sync"
-	"tinkoff-investment-bot/internal/model"
-	printbot "tinkoff-investment-bot/internal/print-bot"
+	printbot "tinkoff-investment-bot/internal/bot/print"
+	"tinkoff-investment-bot/internal/model/database"
+	"tinkoff-investment-bot/internal/model/tracker"
 	"tinkoff-investment-bot/internal/services/marketdata"
 )
 
@@ -26,17 +27,17 @@ func NewShareStorage(db *gorm.DB) *SharePostgresStorage {
 	return &SharePostgresStorage{db: db}
 }
 
-func (s *SharePostgresStorage) AddShare(share *model.Share, userID uint, price float32) error {
-	result := s.db.FirstOrCreate(share, model.Share{UID: share.UID})
+func (s *SharePostgresStorage) AddShare(share *database.Share, userID uint, price float32) error {
+	result := s.db.FirstOrCreate(share, database.Share{UID: share.UID})
 	if result.Error != nil {
 		return result.Error
 	}
 
-	result = s.db.FirstOrCreate(&model.UserFavoriteShare{
+	result = s.db.FirstOrCreate(&database.UserFavoriteShare{
 		UserID:    userID,
 		ShareID:   share.ID,
 		LastPrice: price,
-	}, model.UserFavoriteShare{
+	}, database.UserFavoriteShare{
 		UserID:  userID,
 		ShareID: share.ID,
 	})
@@ -46,9 +47,9 @@ func (s *SharePostgresStorage) AddShare(share *model.Share, userID uint, price f
 	return nil
 }
 
-func (s *SharePostgresStorage) GetShares(tracker *model.Tracker) {
+func (s *SharePostgresStorage) GetShares(tracker *tracker.Tracker) {
 	var results []*Result
-	s.db.Model(&model.Share{}).
+	s.db.Model(&database.Share{}).
 		Select("shares.uid, shares.ticker, shares.Name, users.telegram_id, user_favorite_shares.last_price ").
 		Joins("left join user_favorite_shares on user_favorite_shares.share_id = shares.id").
 		Joins("left join users on users.id = user_favorite_shares.user_id").Scan(&results)
@@ -71,7 +72,7 @@ func (s *SharePostgresStorage) GetShares(tracker *model.Tracker) {
 	wg.Wait()
 }
 
-func getSharesWithBigPriceChange(tracker *model.Tracker, share *Result) (float32, float32, string, error) {
+func getSharesWithBigPriceChange(tracker *tracker.Tracker, share *Result) (float32, float32, string, error) {
 	instrument, err := tracker.InstrumentsService.ShareByUid(share.UID)
 	if err != nil {
 		return 0, 0, "", err

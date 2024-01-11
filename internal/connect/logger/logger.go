@@ -1,4 +1,4 @@
-package connect
+package logger
 
 import (
 	"go.uber.org/zap"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func getLogger() *zap.SugaredLogger {
+func GetLogger() *zap.SugaredLogger {
 	zapConfig := zap.NewDevelopmentConfig()
 	zapConfig.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(time.DateTime)
 	zapConfig.EncoderConfig.TimeKey = "time"

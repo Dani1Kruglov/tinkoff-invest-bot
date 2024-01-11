@@ -1,50 +1,48 @@
 package tracking
 
 import (
-	"tinkoff-investment-bot/internal/connect"
-	"tinkoff-investment-bot/internal/cron"
-	printbot "tinkoff-investment-bot/internal/print-bot"
+	"github.com/russianinvestments/invest-api-go-sdk/investgo"
+	s "tinkoff-investment-bot/internal/model/settings"
+	t "tinkoff-investment-bot/internal/model/tracker"
 	is "tinkoff-investment-bot/internal/services/instruments/invest-schedules"
 	"tinkoff-investment-bot/internal/services/instruments/shares"
-
 	o "tinkoff-investment-bot/internal/services/operations"
 )
 
-func TrackByTinkoffToken() {
-	telegramID := "telegramID" //get from telegram bot
+func TrackByTinkoffToken(settings *s.Settings, client *investgo.Client, telegramChatID int64, command string) []string {
+	var (
+		tracker   = t.NewTracker(client)
+		responses []string
+	)
 
-	client, db, cancel, logger, tracker := connect.Config(telegramID)
-	defer func() {
-		connect.Close(client, db, cancel, logger)
-	}()
+	/*settings.Logger.Infoln("start cron schedule")
+	go cron.NewCron(settings.DB, tracker)*/
 
-	logger.Infoln("start cron schedule")
-	go cron.NewCron(db, tracker)
-
-	end := false
-	for !end {
-		command := printbot.MainMenu()
-		switch command {
-		case "0":
-			end = true
-			break
-		case "1":
-			o.GetUserSecuritiesOnAccount(tracker, logger, db, telegramID)
-			break
-		case "2":
-			shares.ViewInfoOnShareByItsTicker(tracker, logger)
-			break
-		case "3":
-			shares.AddShareToListOfTracked(tracker, logger, db, telegramID)
-			break
-		case "4":
-			is.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, false)
-			break
-		case "5":
-			is.GetScheduleOnClientSecurities(tracker, logger, db, telegramID, true)
-			break
-		default:
-			break
-		}
+	switch command {
+	case "0":
+		break
+	case "1":
+		responses = o.GetUserSecuritiesOnAccount(tracker, settings.Logger, settings.DB, telegramChatID)
+		break
+	case "2":
+		responses = []string{"Введите тикер акции (<ticker=MOEX>, <ticker=SBER> или другие):"}
+		break
+	case "3":
+		shares.AddShareToListOfTracked(tracker, settings.Logger, settings.DB, telegramChatID)
+		break
+	case "4":
+		responses = is.GetScheduleOnClientSecurities(tracker, settings.Logger, settings.DB, telegramChatID, false)
+		break
+	case "5":
+		responses = is.GetScheduleOnClientSecurities(tracker, settings.Logger, settings.DB, telegramChatID, true)
+		break
+	default:
+		break
 	}
+	return responses
+}
+
+func GetShare(settings *s.Settings, client *investgo.Client, ticker string) []string {
+	tracker := t.NewTracker(client)
+	return shares.ViewInfoOnShareByItsTicker(tracker, settings.Logger, ticker)
 }

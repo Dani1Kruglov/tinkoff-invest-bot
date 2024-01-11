@@ -2,27 +2,27 @@ package main
 
 import (
 	"fmt"
-	"tinkoff-investment-bot/internal/tracking"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"tinkoff-investment-bot/internal/bot/listener"
+	"tinkoff-investment-bot/internal/bot/model"
+	"tinkoff-investment-bot/internal/connect"
+	ms "tinkoff-investment-bot/internal/model/settings"
 )
 
 func main() {
-
-	fmt.Println("Хотите использовать бота для: ")
-	fmt.Println("1 - только для отслеживания информации по ценным бумагам ")
-	fmt.Println("2 - для выполнения операций ")
-	var command string
-	_, err := fmt.Scan(&command)
+	botAPI, err := tgbotapi.NewBotAPI("TELEGRAM_BOT_API_TOKEN")
 	if err != nil {
-		_ = fmt.Errorf(err.Error())
+		fmt.Errorf("failed to create bot: %v", err)
 	}
-	switch command {
-	case "1":
-		tracking.TrackByTinkoffToken()
-		break
-	case "2":
-		break
-	default:
-		fmt.Println("Такой команды нет")
-		break
-	}
+
+	tinkoffInvestBot := model.New(botAPI)
+
+	settings := ms.NewSettings()
+
+	defer func() {
+		connect.Close(&settings)
+	}()
+
+	listener.ListenUpdates(tinkoffInvestBot, &settings)
 }

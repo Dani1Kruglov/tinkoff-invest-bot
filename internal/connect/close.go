@@ -1,32 +1,23 @@
 package connect
 
 import (
-	"context"
-	"github.com/russianinvestments/invest-api-go-sdk/investgo"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 	"log"
+	s "tinkoff-investment-bot/internal/model/settings"
 )
 
-func Close(client *investgo.Client, db *gorm.DB, cancel context.CancelFunc, logger *zap.SugaredLogger) {
-	logger.Infoln("-------end-------")
-	err := logger.Sync()
+func Close(settings *s.Settings) {
+	settings.Logger.Infoln("-------end-------")
+	err := settings.Logger.Sync()
 	if err != nil {
 		log.Printf(err.Error())
 	}
 
-	cancel()
+	settings.Logger.Infof("closing connect connection")
 
-	logger.Infof("closing connect connection")
-	err = client.Stop()
-	if err != nil {
-		logger.Errorf("connect shutdown error %v", err.Error())
-	}
-
-	logger.Infof("closing database connection")
-	sqlDB, err := db.DB()
+	settings.Logger.Infof("closing database connection")
+	sqlDB, err := settings.DB.DB()
 	err = sqlDB.Close()
 	if err != nil {
-		logger.Errorf("close db connect error %v", err.Error())
+		settings.Logger.Errorf("close db connect error %v", err.Error())
 	}
 }

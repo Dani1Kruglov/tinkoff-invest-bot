@@ -8,11 +8,11 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"tinkoff-investment-bot/internal/model"
+	"tinkoff-investment-bot/internal/model/tracker"
 	"tinkoff-investment-bot/internal/storage"
 )
 
-func NewCron(db *gorm.DB, tracker *model.Tracker) {
+func NewCron(db *gorm.DB, tracker *tracker.Tracker) {
 	kldTime, _ := time.LoadLocation("Europe/Kaliningrad")
 	scheduler := cron.New(cron.WithLocation(kldTime))
 
@@ -32,7 +32,7 @@ func NewCron(db *gorm.DB, tracker *model.Tracker) {
 	<-sig
 }
 
-func checkShareForPriceDifference(db *gorm.DB, tracker *model.Tracker) {
+func checkShareForPriceDifference(db *gorm.DB, tracker *tracker.Tracker) {
 	shareStorage := storage.NewShareStorage(db)
 	shareStorage.GetShares(tracker)
 }
