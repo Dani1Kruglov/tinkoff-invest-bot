@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-
+	"google.golang.org/grpc/grpclog"
 	"tinkoff-investment-bot/internal/bot/listener"
 	"tinkoff-investment-bot/internal/bot/model"
 	"tinkoff-investment-bot/internal/connect"
@@ -11,9 +10,9 @@ import (
 )
 
 func main() {
-	botAPI, err := tgbotapi.NewBotAPI("TELEGRAM_BOT_API_TOKEN")
+	botAPI, err := tgbotapi.NewBotAPI("5844971569:AAG08-g6E4ypD_XvIb2wEjYRjDo0owdMyhw")
 	if err != nil {
-		fmt.Errorf("failed to create bot: %v", err)
+		grpclog.Fatalln("connect Telegram bot: failed to create bot: %v", err)
 	}
 
 	tinkoffInvestBot := model.New(botAPI)

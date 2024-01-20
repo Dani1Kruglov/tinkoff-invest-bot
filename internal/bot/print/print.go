@@ -51,26 +51,6 @@ func UserAccountSelect(accounts []*investapi.Account) (int, error) {
 	return num, nil
 }
 
-func AddToListOfTracked() (string, error) {
-	var command string
-	fmt.Println("Добавить акцию в список отслеживаемых? \n1 - да\n2 - нет")
-	_, err := fmt.Scan(&command)
-	if err != nil {
-		return "", err
-	}
-	return command, nil
-}
-
-func SpecifyPrice() (string, error) {
-	var command string
-	fmt.Println("Отслеживать изменение цены на 10% от текущей (если нет, укажите свою цену)? \n1 - да (button)\nУказать свою цену")
-	_, err := fmt.Scan(&command)
-	if err != nil {
-		return "", err
-	}
-	return command, nil
-}
-
 func PriceChange(currentPrice float32, pastPrice float32, message string) {
 	fmt.Println("-  -  -  -  -  -  -  -  -  -  -")
 	fmt.Println(time.Now())

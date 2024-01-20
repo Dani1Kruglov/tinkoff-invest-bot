@@ -5,10 +5,10 @@ import (
 	"github.com/russianinvestments/invest-api-go-sdk/investgo"
 	investapi "github.com/russianinvestments/invest-api-go-sdk/proto"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 	"strconv"
 	printbot "tinkoff-investment-bot/internal/bot/print"
 	"tinkoff-investment-bot/internal/model/database"
+	"tinkoff-investment-bot/internal/model/settings"
 	"tinkoff-investment-bot/internal/model/tracker"
 	m "tinkoff-investment-bot/internal/services/marketdata"
 	"tinkoff-investment-bot/internal/storage"
@@ -23,46 +23,43 @@ func ViewInfoOnShareByItsTicker(tracker *tracker.Tracker, logger *zap.SugaredLog
 	return shareResp
 }
 
-func AddShareToListOfTracked(tracker *tracker.Tracker, logger *zap.SugaredLogger, db *gorm.DB, telegramChatID int64) {
-	instrument, _, price32, err := getInfoAboutShareByTicker(tracker, "")
+func GetShareForFavoriteList(tracker *tracker.Tracker, settings *settings.Settings, ticker string) []string {
+	_, shareResp, _, err := getInfoAboutShareByTicker(tracker, ticker)
 	if err != nil {
-		logger.Errorf(err.Error())
+		settings.Logger.Errorf(err.Error())
 	}
+	shareResp[0] += "\nДобавить акцию в список отслеживаемых?\n"
+	return shareResp
+}
 
-	command, err := printbot.AddToListOfTracked()
+func AddShareToListOfTracked(tracker *tracker.Tracker, settings *settings.Settings, ticker string, telegramChatID int64, customPrice string) []string {
+	instrument, _, price32, err := getInfoAboutShareByTicker(tracker, ticker)
 	if err != nil {
-		logger.Errorf(err.Error())
+		settings.Logger.Errorf(err.Error())
 	}
 
-	if command == "1" {
-		var price float64
-		command, err = printbot.SpecifyPrice()
+	if customPrice != "" {
+		price, err := strconv.ParseFloat(customPrice, 32)
 		if err != nil {
-			logger.Errorf(err.Error())
+			settings.Logger.Errorf(err.Error())
 		}
-
-		if command != "1" {
-			price, err = strconv.ParseFloat(command, 32)
-			if err != nil {
-				logger.Errorf(err.Error())
-			}
-			price32 = float32(price)
-		}
-
-		userStorage := storage.NewUserStorage(db)
-		shareStorage := storage.NewShareStorage(db)
-
-		err = shareStorage.AddShare(&database.Share{
-			UID:       instrument.GetUid(),
-			Ticker:    instrument.GetTicker(),
-			Name:      instrument.GetName(),
-			FIGI:      instrument.GetFigi(),
-			ClassCode: instrument.GetClassCode(),
-		}, userStorage.GetUserByTelegramChatID(telegramChatID).ID, price32)
-		if err != nil {
-			logger.Errorf(err.Error())
-		}
+		price32 = float32(price)
 	}
+	userStorage := storage.NewUserStorage(settings.DB)
+	shareStorage := storage.NewShareStorage(settings.DB)
+
+	err = shareStorage.AddShare(&database.Share{
+		UID:       instrument.GetUid(),
+		Ticker:    instrument.GetTicker(),
+		Name:      instrument.GetName(),
+		FIGI:      instrument.GetFigi(),
+		ClassCode: instrument.GetClassCode(),
+	}, userStorage.GetUserByTelegramChatID(telegramChatID).ID, price32)
+	if err != nil {
+		settings.Logger.Errorf(err.Error())
+	}
+
+	return []string{"Акция успешно добавлена в отслеживаемый список"}
 }
 
 func getInfoAboutShareByTicker(tracker *tracker.Tracker, ticker string) (*investapi.Share, []string, float32, error) {

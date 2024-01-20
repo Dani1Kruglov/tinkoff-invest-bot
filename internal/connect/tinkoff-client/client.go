@@ -1,4 +1,4 @@
-package client
+package tinkoff_client
 
 import (
 	"context"

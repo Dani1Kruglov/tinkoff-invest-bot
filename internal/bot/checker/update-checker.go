@@ -1,12 +1,13 @@
 package checker
 
 import (
+	"sync"
 	"tinkoff-investment-bot/internal/bot/handler"
 	"tinkoff-investment-bot/internal/bot/model"
 	ms "tinkoff-investment-bot/internal/model/settings"
 )
 
-func CheckUpdate(tinkoffInvestBot *model.Bot, settings *ms.Settings) {
+func CheckUpdate(tinkoffInvestBot *model.Bot, settings *ms.Settings, cacheCommand *sync.Map) {
 
 	client, cancel := handler.ClientHandler(tinkoffInvestBot.Update.FromChat().ID, settings)
 
@@ -26,9 +27,9 @@ func CheckUpdate(tinkoffInvestBot *model.Bot, settings *ms.Settings) {
 		if tinkoffInvestBot.Update.Message.Command() != "" {
 			handler.CommandHandler(tinkoffInvestBot)
 		} else if tinkoffInvestBot.Update.Message.Text != "" {
-			handler.MessageHandler(tinkoffInvestBot, settings, client, &cancel)
+			handler.MessageHandler(tinkoffInvestBot, settings, client, &cancel, cacheCommand)
 		}
 	} else if tinkoffInvestBot.Update.CallbackQuery != nil {
-		handler.InlineKeyBoardHandler(tinkoffInvestBot, settings, client)
+		handler.InlineKeyBoardHandler(tinkoffInvestBot, settings, client, cacheCommand)
 	}
 }
