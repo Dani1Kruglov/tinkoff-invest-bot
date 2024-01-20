@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	botAPI, err := tgbotapi.NewBotAPI("5844971569:AAG08-g6E4ypD_XvIb2wEjYRjDo0owdMyhw")
+	botAPI, err := tgbotapi.NewBotAPI("TELEGRAM_BOT_TOKEN")
 	if err != nil {
 		grpclog.Fatalln("connect Telegram bot: failed to create bot: %v", err)
 	}
